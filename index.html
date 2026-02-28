@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Bridge | StreamZone</title>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root { --primary-bg: #0A0F2A; --card-bg: #1C2141; --accent-color: #DFFF00; --text-primary: #FFFFFF; --text-secondary: #a9a9b3; --input-bg: #0E1225; --success-color: #27ae60; --danger-color: #e74c3c; --border-color: #33395b; }
+        body { background-color: var(--primary-bg); color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: var(--accent-color); text-align: center; margin-bottom: 30px; }
+        
+        /* Tabs */
+        .tabs { display: flex; justify-content: space-around; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .tab-button { padding: 15px; cursor: pointer; background: none; border: none; color: var(--text-secondary); font-weight: bold; font-size: 14px; }
+        .tab-button.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Inputs & UI */
+        .input-field, textarea, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+        .action-button { background: linear-gradient(90deg, #FF416C, #FFDE00); color: #000; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-secondary { background: #333; color: white; margin-top: 5px; width: auto; font-size: 12px; }
+        
+        .message { padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; text-align: center; font-weight: bold; }
+        .message.show { display: block; }
+        .message.success { background: rgba(39, 174, 96, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
+        .message.error { background: rgba(231, 76, 60, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
+
+        /* Browse Grid */
+        #browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .browse-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .browse-card:hover { border-color: var(--accent-color); transform: translateY(-5px); }
+        .browse-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .browse-card-title { padding: 10px; font-size: 12px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Checkboxes */
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow-y: auto; background: var(--input-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; }
+        .checkbox-label { display: flex; align-items: center; gap: 5px; background: #1a2035; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid #333; }
+        .checkbox-label input:checked + span { color: var(--accent-color); }
+
+        .spinner { border: 3px solid rgba(255,255,255,.3); border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Media Bridge</h1>
+
+    <div class="tabs">
+        <button class="tab-button active" onclick="openTab(event, 'tab-browse')">1. Browse & Search</button>
+        <button class="tab-button" onclick="openTab(event, 'tab-scrape')">2. Scrape URL</button>
+        <button class="tab-button" onclick="openTab(event, 'tab-save')">3. Save to Database</button>
+    </div>
+
+    <div id="status-message" class="message"></div>
+
+    <!-- TAB 1: BROWSE & SEARCH -->
+    <div id="tab-browse" class="tab-content active">
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <select id="search-type" class="input-field" style="width:120px; margin-bottom:0; background:#2c3e50;">
+                <option value="movies">Movies</option>
+                <option value="series">Series</option>
+            </select>
+            <input type="text" id="search-input" class="input-field" placeholder="Search title..." style="margin-bottom:0">
+            <button onclick="loadContent('search', document.getElementById('search-input').value)" class="action-button" style="width:100px">Search</button>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button id="browse-series-btn" class="action-button btn-secondary" onclick="loadContent('browse', 'series')">Browse Series</button>
+            <button id="browse-movies-btn" class="action-button btn-secondary" onclick="loadContent('browse', 'movies')">Browse Movies</button>
+        </div>
+        <div id="browse-grid"></div>
+        <div id="browse-pagination" style="display:flex; justify-content:center; gap:10px; margin-top:20px;"></div>
+    </div>
+
+    <!-- TAB 2: SCRAPE -->
+    <div id="tab-scrape" class="tab-content">
+        <label>Zflix Full Cookie (Raw String from Network Tab):</label>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="session-cookie-input" class="input-field" placeholder="remember_web_...; XSRF-TOKEN=...; laravel_session=...">
+            <button id="save-cookie-btn" class="action-button btn-secondary" style="height:43px">Save</button>
+        </div>
+        
+        <label>URL to Scrape:</label>
+        <input type="text" id="scrape-url-input" class="input-field" placeholder="https://zflix.click/watch/...">
+        <button id="scrape-btn" class="action-button" onclick="handleScrape(this)">Scrape Content</button>
+
+        <div style="margin-top:20px">
+            <pre><code class="language-json" id="output-data">{}</code></pre>
+        </div>
+    </div>
+
+    <!-- TAB 3: SAVE -->
+    <div id="tab-save" class="tab-content">
+        <div id="tmdb-section" style="margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:20px;">
+            <label>Search TMDB Metadata:</label>
+            <div style="display:flex; gap:10px">
+                <input type="text" id="tmdb-search-query" class="input-field">
+                <button id="tmdb-search-btn" class="action-button btn-secondary">Search TMDB</button>
+            </div>
+            <div id="tmdb-results" style="display:flex; gap:10px; overflow-x:auto; padding:10px 0;"></div>
+        </div>
+
+        <form id="db-form">
+            <input type="hidden" id="db_tmdb_id">
+            <input type="hidden" id="db_poster">
+            <input type="hidden" id="db_backdrop">
+            <input type="hidden" id="db_year">
+
+            <label>Title:</label>
+            <input type="text" id="db_title" class="input-field" required>
+
+            <label>Description:</label>
+            <textarea id="db_description" class="input-field" rows="3"></textarea>
+
+            <div id="movie_stream_link_group" style="display:none">
+                <label>Stream Link:</label>
+                <input type="text" id="db_stream_link" class="input-field">
+            </div>
+
+            <div id="series_episodes_group" style="display:none">
+                <label>Episodes JSON:</label>
+                <textarea id="db_episodes_json" class="input-field" rows="5"></textarea>
+            </div>
+
+            <label>Select VJ (Exact Duplicate Check):</label>
+            <div id="vj-container" class="checkbox-group"></div>
+
+            <label>Genres:</label>
+            <div id="genre-container" class="checkbox-group"></div>
+
+            <label>App Tags:</label>
+            <div id="tag-container" class="checkbox-group"></div>
+
+            <button type="submit" id="save-db-btn" class="action-button">Save to Database</button>
+            <div id="db-form-message" class="message" style="margin-top:10px"></div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
+<script>
+    const SCRAPER_URL = 'https://scraper.streamzonemovies.online';
+    const PB_URL = 'https://db.streamzonemovies.online';
+    const TMDB_API_KEY = "f7a3b097ba7a990fd0c8ef3147646fb5";
+    const pb = new PocketBase(PB_URL);
+    pb.autoCancellation(false);
+
+    const elements = {
+        statusMessage: document.getElementById('status-message'),
+        outputData: document.getElementById('output-data'),
+        cookieInput: document.getElementById('session-cookie-input'),
+        urlInput: document.getElementById('scrape-url-input'),
+        browseGrid: document.getElementById('browse-grid'),
+        paginationContainer: document.getElementById('browse-pagination'),
+        dbForm: document.getElementById('db-form'),
+        dbFormMessage: document.getElementById('db-form-message'),
+        saveDbBtn: document.getElementById('save-db-btn'),
+        tmdbSearchQuery: document.getElementById('tmdb-search-query'),
+        tmdbResults: document.getElementById('tmdb-results'),
+        movieGroup: document.getElementById('movie_stream_link_group'),
+        seriesGroup: document.getElementById('series_episodes_group'),
+        searchInput: document.getElementById('search-input'),
+        searchType: document.getElementById('search-type')
+    };
+
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        if (evt) {
+            evt.currentTarget.classList.add('active');
+        } else {
+            const targetBtn = document.querySelector(`.tab-button[onclick*="'${tabName}'"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+        }
+    }
+
+    function showMsg(type, text, el = elements.statusMessage) {
+        el.className = `message ${type} show`;
+        el.textContent = text;
+        setTimeout(() => el.classList.remove('show'), 6000);
+    }
+
+    // --- BROWSE & SEARCH LOGIC ---
+    async function loadContent(action, value, page = 1) {
+        if (!value && action === 'search') return;
+        
+        let url;
+        if (action === 'browse') {
+            url = `https://zflix.click/${value}${page > 1 ? '/page/'+page : ''}`;
+        } else {
+            const type = elements.searchType.value; 
+            url = `https://zflix.click/${type}?search=${encodeURIComponent(value.trim())}`;
+        }
+
+        elements.browseGrid.innerHTML = '<div class="spinner"></div> Loading...';
+        elements.paginationContainer.innerHTML = '';
+        const cookie = elements.cookieInput.value.trim();
+        
+        try {
+            const res = await fetch(`${SCRAPER_URL}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, type: "browse", fullCookie: cookie })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Server Error');
+            
+            if (!data.items || data.items.length === 0) {
+                elements.browseGrid.innerHTML = `<p style="padding:20px;">No results found.</p>`;
+                return;
+            }
+
+            elements.browseGrid.innerHTML = data.items.map(i => `
+                <div class="browse-card" onclick="selectItem('${i.watchUrl}')">
+                    <img src="${i.imageUrl}" onerror="this.src='https://via.placeholder.com/150x225?text=No+Image'">
+                    <div class="browse-card-title">${i.title}</div>
+                </div>
+            `).join('');
+
+            if (action === 'browse' && data.pagination) {
+                renderPagination(data.pagination, action, value);
+            }
+
+        } catch (err) { 
+            elements.browseGrid.innerHTML = `<p style="color:red; padding:20px;">Error: ${err.message}</p>`; 
+        }
+    }
+
+    function renderPagination(pagination, action, value) {
+        const { currentPage, totalPages } = pagination;
+        let html = '';
+        if (currentPage > 1) html += `<button class="action-button btn-secondary" style="width:auto" onclick="loadContent('${action}', '${value}', ${currentPage - 1})">Prev</button>`;
+        html += `<span style="align-self:center; margin:0 10px;">Page ${currentPage} of ${totalPages}</span>`;
+        if (currentPage < totalPages) html += `<button class="action-button btn-secondary" style="width:auto" onclick="loadContent('${action}', '${value}', ${currentPage + 1})">Next</button>`;
+        elements.paginationContainer.innerHTML = html;
+    }
+
+    function selectItem(url) {
+        // Auto-fix detail links to watch links for movies
+        if (url.includes('/details/') && !url.includes('/shows/')) {
+            url = url.replace('/details/', '/watch/');
+        }
+        elements.urlInput.value = url;
+        openTab(null, 'tab-scrape');
+        showMsg('success', 'URL Loaded! Now click "Scrape Content".');
+    }
+
+    // --- SCRAPE LOGIC ---
+    async function handleScrape(btn) {
+        const url = elements.urlInput.value.trim();
+        const cookie = elements.cookieInput.value.trim();
+        if (!cookie) return showMsg('error', 'Full Cookie required!');
+        
+        btn.disabled = true; 
+        btn.innerHTML = 'Scraping... <span class="spinner"></span>';
+
+        try {
+            const isSeries = url.includes('/shows/') || url.includes('type=series');
+            const res = await fetch(`${SCRAPER_URL}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, type: isSeries ? 'series' : 'movie', fullCookie: cookie })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            elements.outputData.textContent = JSON.stringify(data, null, 2);
+            Prism.highlightElement(elements.outputData);
+            
+            populateForm(isSeries ? 'series' : 'movie', data);
+            
+            showMsg('success', 'Scrape Success! Opening Save tab...');
+            setTimeout(() => openTab(null, 'tab-save'), 800);
+        } catch (err) { 
+            showMsg('error', err.message); 
+            elements.outputData.textContent = JSON.stringify({error: err.message}, null, 2);
+        } finally { 
+            btn.disabled = false; 
+            btn.innerHTML = 'Scrape Content'; 
+        }
+    }
+
+    // --- FORM POPULATION (UPDATED JSON FORMAT) ---
+    function populateForm(type, data) {
+        elements.dbForm.reset();
+        const isSeries = type === 'series';
+        elements.movieGroup.style.display = isSeries ? 'none' : 'block';
+        elements.seriesGroup.style.display = isSeries ? 'block' : 'none';
+
+        const title = isSeries ? data.seriesTitle : data.title;
+        document.getElementById('db_title').value = title;
+        elements.tmdbSearchQuery.value = title;
+
+        if (isSeries) {
+            const flat = [];
+            if (data.seasons) {
+                data.seasons.forEach(s => {
+                    s.episodes.forEach(e => {
+                        // --- UPDATED FORMATTING LOGIC ---
+                        // 1. Force Uppercase Title
+                        // 2. Pad Numbers (e.g., S01E05)
+                        const sNum = String(s.season_number).padStart(2, '0');
+                        const eNum = String(e.episode_number).padStart(2, '0');
+                        const finalTitle = `${title.toUpperCase()} S${sNum}E${eNum}`;
+
+                        flat.push({ 
+                            episode: e.episode_number, 
+                            season: s.season_number, 
+                            title: finalTitle, 
+                            url: e.videoUrl // Changed 'link' to 'url'
+                        });
+                    });
+                });
+            }
+            document.getElementById('db_episodes_json').value = JSON.stringify(flat, null, 2);
+        } else {
+            document.getElementById('db_stream_link').value = data.videoUrl;
+        }
+        // Trigger TMDB Search
+        document.getElementById('tmdb-search-btn').click();
+    }
+
+    // --- SAVE LOGIC WITH ROBUST DUPLICATE CHECK ---
+    elements.dbForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('db_title').value.trim();
+        const tmdbId = document.getElementById('db_tmdb_id').value;
+        const selectedVjs = Array.from(document.querySelectorAll('input[name="vjs"]:checked')).map(c => c.value);
+
+        if (selectedVjs.length === 0) return showMsg('error', 'Select at least one VJ!', elements.dbFormMessage);
+
+        elements.saveDbBtn.disabled = true;
+        elements.saveDbBtn.innerText = "Checking duplicates...";
+
+        try {
+            // --- UPDATED DUPLICATE CHECK ---
+            // We check matching TMDB ID *OR* matching Title.
+            
+            let filterString = `title = "${title.replace(/"/g, '\\"')}"`;
+            if (tmdbId) {
+                filterString += ` || tmdb_id = "${tmdbId}"`;
+            }
+
+            const existingRecords = await pb.collection('media').getFullList({ 
+                filter: filterString
+            });
+            
+            // Helper to compare VJ arrays exactly
+            const isSameVjs = (arr1, arr2) => {
+                const a = [...(arr1 || [])].sort();
+                const b = [...(arr2 || [])].sort();
+                return JSON.stringify(a) === JSON.stringify(b);
+            };
+
+            // Find if any record has the exact same VJs
+            const duplicate = existingRecords.find(r => isSameVjs(r.vjs, selectedVjs));
+            
+            if (duplicate) {
+                throw new Error(`DUPLICATE FOUND: "${duplicate.title}" already exists with these exact VJs.`);
+            }
+            // --- END DUPLICATE CHECK ---
+
+            // Save if no duplicates found
+            elements.saveDbBtn.innerText = "Saving...";
+            const isSeries = elements.seriesGroup.style.display === 'block';
+            const record = {
+                title, tmdb_id: tmdbId, description: document.getElementById('db_description').value,
+                poster: document.getElementById('db_poster').value, backdrop: document.getElementById('db_backdrop').value,
+                year: document.getElementById('db_year').value, vjs: selectedVjs,
+                genres: Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(c => c.value),
+                tags: Array.from(document.querySelectorAll('input[name="tags"]:checked')).map(c => c.value),
+                contentType: isSeries ? 'tv' : 'movie'
+            };
+            
+            if (isSeries) record.episodes = JSON.parse(document.getElementById('db_episodes_json').value);
+            else record.stream_link = document.getElementById('db_stream_link').value;
+
+            await pb.collection('media').create(record);
+            showMsg('success', '✅ Saved to Database!', elements.dbFormMessage);
+            elements.dbForm.reset();
+            document.querySelectorAll('input[name="tags"][value="latest_uploads"]').forEach(i => i.checked = true);
+        } catch (err) { 
+            showMsg('error', `${err.message}`, elements.dbFormMessage); 
+        } finally { 
+            elements.saveDbBtn.disabled = false; 
+            elements.saveDbBtn.innerText = "Save to Database"; 
+        }
+    });
+
+    // --- TMDB API & AUTO GENRES ---
+    document.getElementById('tmdb-search-btn').addEventListener('click', async () => {
+        const q = elements.tmdbSearchQuery.value;
+        const type = elements.seriesGroup.style.display === 'block' ? 'tv' : 'movie';
+        if (!q) return;
+        elements.tmdbResults.innerHTML = 'Searching...';
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/search/${type}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}`);
+            const d = await res.json();
+            elements.tmdbResults.innerHTML = d.results.slice(0, 5).map(i => `
+                <div class="browse-card" style="width:100px; font-size:10px;" onclick="applyTmdb(${i.id}, '${type}')">
+                    <img src="https://image.tmdb.org/t/p/w200${i.poster_path}" onerror="this.src='https://via.placeholder.com/100x150'">
+                    <div style="padding:5px">${i.name || i.title}</div>
+                </div>
+            `).join('');
+        } catch (e) { elements.tmdbResults.innerHTML = 'TMDB Search Failed.'; }
+    });
+
+    async function applyTmdb(id, type) {
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
+            const d = await res.json();
+            
+            // --- UPDATE: Replace Title Input with TMDB Title ---
+            document.getElementById('db_title').value = d.title || d.name;
+
+            // Fill Inputs
+            document.getElementById('db_tmdb_id').value = d.id;
+            document.getElementById('db_poster').value = d.poster_path ? `https://image.tmdb.org/t/p/w500${d.poster_path}` : '';
+            document.getElementById('db_backdrop').value = d.backdrop_path ? `https://image.tmdb.org/t/p/original${d.backdrop_path}` : '';
+            document.getElementById('db_year').value = (d.first_air_date || d.release_date || '').split('-')[0];
+            document.getElementById('db_description').value = d.overview;
+
+            // --- AUTO SELECT GENRES ---
+            // Uncheck all genres first
+            document.querySelectorAll('input[name="genres"]').forEach(cb => cb.checked = false);
+
+            if (d.genres) {
+                d.genres.forEach(g => {
+                    let genreName = g.name.toUpperCase();
+                    // Mapping for differences between TMDB and Your List
+                    if (genreName === 'SCIENCE FICTION') genreName = 'SCI FI';
+                    if (genreName === 'ACTION & ADVENTURE') {
+                        // Check both if mixed
+                        const c1 = document.querySelector(`input[name="genres"][value="ACTION"]`);
+                        if(c1) c1.checked = true;
+                        const c2 = document.querySelector(`input[name="genres"][value="ADVENTURE"]`);
+                        if(c2) c2.checked = true;
+                        return; 
+                    }
+
+                    const checkbox = document.querySelector(`input[name="genres"][value="${genreName}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+
+            showMsg('success', 'Metadata & Genres Applied!');
+        } catch (e) { showMsg('error', 'Failed to fetch details.'); }
+    }
+
+    // --- SETUP CHECKBOXES ---
+    const VJS = ["VJ JUNIOR", "VJ TONNY","VJ HEAVY Q","VJ EMMY", "VJ LIGHT","VJ RYAN","VJ JOE", "VJ MK","VJ HAM", "VJ MARK", "VJ SHIELD", "VJ ISMA K","VJ MOSCO", "VJ BONNY", "VJ NEIL", "VJ JOVAN", "VJ TOM", "VJ SHAO K", "VJ JINGO", "VJ ICE P", "VJ KEVO", "VJ KEVIN", "VJ KIN", "VJ KRISS SWEET", "VJ HD", "VJ DAN DE", "VJ SAMMY", "VJ IVO", "VJ LITTLE T", "VJ LASH", "VJ MOX", "VJ MUBA", "VJ EDDY", "VJ KAM", "VJ LANCE", "VJ KS", "VJ ULIO", "VJ AARON", "VJ CABS", "VJ BANKS", "VJ JIMMY", "VJ BAROS", "VJ SOUL", "VJ SON", "VJ KIMULI", "VJ FREDY", "VJ JUMPERS", "VJ ASHIM", "VJ PAULETA", "VJ MARTIN K", "VJ HENRICO", "VJ MUSA", "VJ UNCLE T", "VJ WAZA", "VJ RONAGE"];
+    const GENRES = ["ACTION", "ADVENTURE", "ANIMATION", "COMEDY", "CRIME", "DOCUMENTARY", "DRAMA", "FAMILY", "FANTASY", "HISTORY", "HORROR", "KUNGU FU", "LOVE STORY", "MUSIC", "MYSTERY", "ROMANCE", "SCI FI", "SPORT", "THRILLER", "WAR", "WESTERN"];
+    const TAGS = ["latest_uploads", "recent_movies", "most_liked", "romance", "Latest-Movies", "indian", "action-thriller", "scifi-fantasy", "high-school", "animation", "horror", "comedy", "adventure", "send_notification", "latest_tv_series"];
+
+    function makeChecks(list, container, name) {
+        document.getElementById(container).innerHTML = list.sort().map(i => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="${name}" value="${i}" ${i==='latest_uploads'?'checked':''}> <span>${i.replace(/_/g, ' ').toUpperCase()}</span>
+            </label>
+        `).join('');
+    }
+
+    document.getElementById('save-cookie-btn').addEventListener('click', () => {
+        const val = elements.cookieInput.value.trim();
+        if (val) {
+            localStorage.setItem('zflixSessionCookie', val);
+            elements.cookieInput.readOnly = true;
+            showMsg('success', 'Cookie saved!');
+            loadContent('browse', 'series');
+        }
+    });
+
+    elements.searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') loadContent('search', elements.searchInput.value);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        makeChecks(VJS, 'vj-container', 'vjs');
+        makeChecks(GENRES, 'genre-container', 'genres');
+        makeChecks(TAGS, 'tag-container', 'tags');
+        
+        const cookie = localStorage.getItem('zflixSessionCookie');
+        if (cookie) { 
+            elements.cookieInput.value = cookie; 
+            elements.cookieInput.readOnly = true; 
+            loadContent('browse', 'series'); 
+        }
+    });
+</script>
+</body>
+</html>
