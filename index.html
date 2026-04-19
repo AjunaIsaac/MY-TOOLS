@@ -123,7 +123,7 @@
             <div id="movie_stream_link_group" style="display:none"><label>Stream Link:</label><input type="text" id="db_stream_link" class="input-field"></div>
             <div id="series_episodes_group" style="display:none"><label>Episodes JSON:</label><textarea id="db_episodes_json" class="input-field" rows="6" style="font-family: monospace; font-size: 11px;"></textarea></div>
             <label>VJ Selector:</label><div id="vj-container" class="checkbox-group"></div>
-            <label>Genres:</label><div id="genre-container" class="checkbox-group"></div>
+            <label>Genres (Auto-Selected from TMDB):</label><div id="genre-container" class="checkbox-group"></div>
             <label>App Tags:</label><div id="tag-container" class="checkbox-group"></div>
             <button type="submit" id="save-db-btn" class="action-button">SAVE TO DATABASE</button>
             <div id="db-form-message" class="message" style="margin-top:10px"></div>
@@ -251,14 +251,32 @@
         try {
             const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
             const d = await res.json();
+            
+            // Populate basic fields
             document.getElementById('db_title').value = d.title || d.name;
             document.getElementById('db_tmdb_id').value = d.id;
             document.getElementById('db_poster').value = d.poster_path ? `https://image.tmdb.org/t/p/w500${d.poster_path}` : '';
             document.getElementById('db_backdrop').value = d.backdrop_path ? `https://image.tmdb.org/t/p/original${d.backdrop_path}` : '';
             document.getElementById('db_year').value = (d.first_air_date || d.release_date || '').split('-')[0];
             document.getElementById('db_description').value = d.overview;
-            showMsg('success', 'Metadata Loaded!');
-        } catch (e) { showMsg('error', 'Failed'); }
+
+            // --- AUTO SELECT GENRES ---
+            document.querySelectorAll('input[name="genres"]').forEach(cb => cb.checked = false);
+            if (d.genres) {
+                d.genres.forEach(g => {
+                    let gName = g.name.toUpperCase();
+                    if (gName === 'SCIENCE FICTION') gName = 'SCI FI';
+                    // Mixed Mapping
+                    if (gName === 'ACTION & ADVENTURE') {
+                         document.querySelectorAll('input[name="genres"][value="ACTION"], input[name="genres"][value="ADVENTURE"]').forEach(c => c.checked = true);
+                    }
+                    const checkbox = document.querySelector(`input[name="genres"][value="${gName}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            showMsg('success', 'Metadata & Genres Loaded!');
+        } catch (e) { showMsg('error', 'Failed to fetch details.'); }
     }
 
     elements.dbForm.addEventListener('submit', async (e) => {
@@ -279,8 +297,6 @@
             else record.stream_link = document.getElementById('db_stream_link').value;
 
             const created = await pb.collection('media').create(record);
-            
-            // --- NOTIFICATION PROMPT ---
             if (confirm(`✅ Saved to Database!\n\nDo you want to send a push notification for "${record.title}"?`)) {
                 window.location.href = `manage-notifications.html?autofill_id=${created.id}`;
             } else {
@@ -296,7 +312,7 @@
     const TAGS = ["latest_uploads", "recent_movies", "most_liked", "romance", "Latest-Movies", "indian", "action-thriller", "scifi-fantasy", "high-school", "animation", "horror", "comedy", "adventure", "send_notification", "latest_tv_series"];
 
     function makeChecks(list, container, name) {
-        document.getElementById(container).innerHTML = list.sort().map(i => `<label class="checkbox-label"><input type="checkbox" name="${name}" value="${i}" ${i==='latest_uploads'?'checked':''}> <span>${i.replace(/_/g, ' ')}</span></label>`).join('');
+        document.getElementById(container).innerHTML = list.sort().map(i => `<label class="checkbox-label"><input type="checkbox" name="${name}" value="${i}" ${i==='latest_uploads'?'checked':''}> <span>${i.replace(/_/g, ' ').toUpperCase()}</span></label>`).join('');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
