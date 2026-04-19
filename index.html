@@ -3,57 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Bridge | StreamZone</title>
+    <title>Media Bridge | StreamZone Pro</title>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <style>
         :root { --primary-bg: #0A0F2A; --card-bg: #1C2141; --accent-color: #DFFF00; --text-primary: #FFFFFF; --text-secondary: #a9a9b3; --input-bg: #0E1225; --success-color: #27ae60; --danger-color: #e74c3c; --border-color: #33395b; }
         body { background-color: var(--primary-bg); color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { color: var(--accent-color); text-align: center; margin-bottom: 30px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: var(--accent-color); text-align: center; margin-bottom: 30px; letter-spacing: 1px; }
         
         /* Tabs */
         .tabs { display: flex; justify-content: space-around; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .tab-button { padding: 15px; cursor: pointer; background: none; border: none; color: var(--text-secondary); font-weight: bold; font-size: 14px; }
+        .tab-button { padding: 15px; cursor: pointer; background: none; border: none; color: var(--text-secondary); font-weight: bold; font-size: 14px; transition: 0.3s; }
         .tab-button.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* Inputs & UI */
-        .input-field, textarea, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
-        .action-button { background: linear-gradient(90deg, #FF416C, #FFDE00); color: #000; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-secondary { background: #333; color: white; margin-top: 5px; width: auto; font-size: 12px; }
+        .input-field, textarea, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 14px; }
+        .action-button { background: linear-gradient(90deg, #FF416C, #FFDE00); color: #000; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: transform 0.1s; }
+        .action-button:active { transform: scale(0.98); }
+        .btn-secondary { background: #33395b; color: white; margin-top: 5px; width: auto; font-size: 12px; border: 1px solid var(--border-color); }
         
-        .message { padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; text-align: center; font-weight: bold; }
+        .message { padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; text-align: center; font-weight: bold; font-size: 14px; }
         .message.show { display: block; }
         .message.success { background: rgba(39, 174, 96, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
         .message.error { background: rgba(231, 76, 60, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
 
         /* Browse Grid */
-        #browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-        .browse-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        #browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .browse-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.2s; border: 1px solid transparent; position: relative; }
         .browse-card:hover { border-color: var(--accent-color); transform: translateY(-5px); }
         .browse-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .browse-card-title { padding: 10px; font-size: 12px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .browse-card-title { padding: 10px; font-size: 12px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 
         /* Checkboxes */
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow-y: auto; background: var(--input-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; }
-        .checkbox-label { display: flex; align-items: center; gap: 5px; background: #1a2035; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid #333; }
-        .checkbox-label input:checked + span { color: var(--accent-color); }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow-y: auto; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; }
+        .checkbox-label { display: flex; align-items: center; gap: 6px; background: #1a2035; padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; border: 1px solid #33395b; transition: 0.2s; }
+        .checkbox-label:hover { border-color: var(--accent-color); }
+        .checkbox-label input:checked + span { color: var(--accent-color); font-weight: bold; }
 
-        .spinner { border: 3px solid rgba(255,255,255,.3); border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        .spinner { border: 3px solid rgba(255,255,255,.3); border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        pre { background: #000 !important; border-radius: 8px; padding: 15px !important; font-size: 12px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Media Bridge</h1>
+    <h1>MEDIA BRIDGE</h1>
 
     <div class="tabs">
-        <button class="tab-button active" onclick="openTab(event, 'tab-browse')">1. Browse & Search</button>
-        <button class="tab-button" onclick="openTab(event, 'tab-scrape')">2. Scrape URL</button>
-        <button class="tab-button" onclick="openTab(event, 'tab-save')">3. Save to Database</button>
+        <button class="tab-button active" onclick="openTab(event, 'tab-browse')">1. BROWSE & SEARCH</button>
+        <button class="tab-button" onclick="openTab(event, 'tab-scrape')">2. SCRAPE URL</button>
+        <button class="tab-button" onclick="openTab(event, 'tab-save')">3. SAVE TO DATABASE</button>
     </div>
 
     <div id="status-message" class="message"></div>
@@ -61,17 +65,17 @@
     <!-- TAB 1: BROWSE & SEARCH -->
     <div id="tab-browse" class="tab-content active">
         <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <select id="search-type" class="input-field" style="width:120px; margin-bottom:0; background:#2c3e50;">
+            <select id="search-type" class="input-field" style="width:120px; margin-bottom:0; background:#1c2141;">
                 <option value="movies">Movies</option>
                 <option value="series">Series</option>
             </select>
-            <input type="text" id="search-input" class="input-field" placeholder="Search title..." style="margin-bottom:0">
-            <button onclick="loadContent('search', document.getElementById('search-input').value)" class="action-button" style="width:100px">Search</button>
+            <input type="text" id="search-input" class="input-field" placeholder="Search Zflix Title..." style="margin-bottom:0">
+            <button onclick="loadContent('search', document.getElementById('search-input').value)" class="action-button" style="width:120px">SEARCH</button>
         </div>
         
         <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button id="browse-series-btn" class="action-button btn-secondary" onclick="loadContent('browse', 'series')">Browse Series</button>
-            <button id="browse-movies-btn" class="action-button btn-secondary" onclick="loadContent('browse', 'movies')">Browse Movies</button>
+            <button class="action-button btn-secondary" onclick="loadContent('browse', 'series')">BROWSE SERIES</button>
+            <button class="action-button btn-secondary" onclick="loadContent('browse', 'movies')">BROWSE MOVIES</button>
         </div>
         <div id="browse-grid"></div>
         <div id="browse-pagination" style="display:flex; justify-content:center; gap:10px; margin-top:20px;"></div>
@@ -79,18 +83,20 @@
 
     <!-- TAB 2: SCRAPE -->
     <div id="tab-scrape" class="tab-content">
-        <label>Zflix Full Cookie (Raw String from Network Tab):</label>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="session-cookie-input" class="input-field" placeholder="remember_web_...; XSRF-TOKEN=...; laravel_session=...">
-            <button id="save-cookie-btn" class="action-button btn-secondary" style="height:43px">Save</button>
-            <button id="edit-cookie-btn" class="action-button btn-secondary" style="height:43px; background:#c0392b; display:none;">Edit</button>
+        <div style="background: rgba(223, 255, 0, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--accent-color); margin-bottom: 20px;">
+            <p style="margin:0; font-size: 13px; color: var(--accent-color);">⚡ <strong>Auto-Login Enabled:</strong> Server is using <strong>ajunaisaaconline@gmail.com</strong>. You can leave the cookie box empty unless you want to use a different account.</p>
         </div>
+
+        <label>Manual Cookie Override (Optional):</label>
+        <input type="text" id="session-cookie-input" class="input-field" placeholder="Paste raw cookie string here if needed...">
         
         <label>URL to Scrape:</label>
         <input type="text" id="scrape-url-input" class="input-field" placeholder="https://zflix.click/watch/...">
-        <button id="scrape-btn" class="action-button" onclick="handleScrape(this)">Scrape Content</button>
+        
+        <button id="scrape-btn" class="action-button" onclick="handleScrape(this)">SCRAPE CONTENT</button>
 
         <div style="margin-top:20px">
+            <label>Raw Data Output:</label>
             <pre><code class="language-json" id="output-data">{}</code></pre>
         </div>
     </div>
@@ -98,10 +104,10 @@
     <!-- TAB 3: SAVE -->
     <div id="tab-save" class="tab-content">
         <div id="tmdb-section" style="margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:20px;">
-            <label>Search TMDB Metadata:</label>
+            <label>Step 1: Get Metadata (TMDB Search):</label>
             <div style="display:flex; gap:10px">
-                <input type="text" id="tmdb-search-query" class="input-field">
-                <button id="tmdb-search-btn" class="action-button btn-secondary">Search TMDB</button>
+                <input type="text" id="tmdb-search-query" class="input-field" placeholder="Title...">
+                <button id="tmdb-search-btn" class="action-button btn-secondary">SEARCH TMDB</button>
             </div>
             <div id="tmdb-results" style="display:flex; gap:10px; overflow-x:auto; padding:10px 0;"></div>
         </div>
@@ -124,8 +130,8 @@
             </div>
 
             <div id="series_episodes_group" style="display:none">
-                <label>Episodes JSON (Auto-Generated):</label>
-                <textarea id="db_episodes_json" class="input-field" rows="5"></textarea>
+                <label>Episodes JSON (Automatic S01E01 Format):</label>
+                <textarea id="db_episodes_json" class="input-field" rows="8"></textarea>
             </div>
 
             <label>Select VJ (Required):</label>
@@ -137,7 +143,7 @@
             <label>App Tags:</label>
             <div id="tag-container" class="checkbox-group"></div>
 
-            <button type="submit" id="save-db-btn" class="action-button">Save to Database</button>
+            <button type="submit" id="save-db-btn" class="action-button">SAVE TO DATABASE</button>
             <div id="db-form-message" class="message" style="margin-top:10px"></div>
         </form>
     </div>
@@ -157,8 +163,6 @@
         statusMessage: document.getElementById('status-message'),
         outputData: document.getElementById('output-data'),
         cookieInput: document.getElementById('session-cookie-input'),
-        saveCookieBtn: document.getElementById('save-cookie-btn'),
-        editCookieBtn: document.getElementById('edit-cookie-btn'),
         urlInput: document.getElementById('scrape-url-input'),
         browseGrid: document.getElementById('browse-grid'),
         paginationContainer: document.getElementById('browse-pagination'),
@@ -177,9 +181,8 @@
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
         document.getElementById(tabName).classList.add('active');
-        if (evt) {
-            evt.currentTarget.classList.add('active');
-        } else {
+        if (evt) evt.currentTarget.classList.add('active');
+        else {
             const targetBtn = document.querySelector(`.tab-button[onclick*="'${tabName}'"]`);
             if (targetBtn) targetBtn.classList.add('active');
         }
@@ -191,175 +194,123 @@
         setTimeout(() => el.classList.remove('show'), 6000);
     }
 
-    // --- BROWSE & SEARCH LOGIC ---
+    // --- BROWSE & SEARCH ---
     async function loadContent(action, value, page = 1) {
         if (!value && action === 'search') return;
-        
-        let url;
-        if (action === 'browse') {
-            url = `https://zflix.click/${value}${page > 1 ? '/page/'+page : ''}`;
-        } else {
-            const type = elements.searchType.value; 
-            url = `https://zflix.click/${type}?search=${encodeURIComponent(value.trim())}`;
-        }
+        let url = (action === 'browse') 
+            ? `https://zflix.click/${value}${page > 1 ? '/page/'+page : ''}` 
+            : `https://zflix.click/${elements.searchType.value}?search=${encodeURIComponent(value.trim())}`;
 
-        elements.browseGrid.innerHTML = '<div class="spinner"></div> Loading...';
-        elements.paginationContainer.innerHTML = '';
-        const cookie = elements.cookieInput.value.trim();
+        elements.browseGrid.innerHTML = '<div style="padding:20px;"><span class="spinner"></span> Contacting Zflix...</div>';
         
         try {
             const res = await fetch(`${SCRAPER_URL}/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, type: "browse", fullCookie: cookie })
+                body: JSON.stringify({ url, type: "browse" })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Server Error');
+            if (!res.ok) throw new Error(data.error);
             
-            if (!data.items || data.items.length === 0) {
-                elements.browseGrid.innerHTML = `<p style="padding:20px;">No results found.</p>`;
-                return;
-            }
-
             elements.browseGrid.innerHTML = data.items.map(i => `
                 <div class="browse-card" onclick="selectItem('${i.watchUrl}')">
-                    <img src="${i.imageUrl}" onerror="this.src='https://via.placeholder.com/150x225?text=No+Image'">
+                    <img src="${i.imageUrl || 'https://via.placeholder.com/150x225?text=No+Poster'}">
                     <div class="browse-card-title">${i.title}</div>
                 </div>
             `).join('');
-
-            if (action === 'browse' && data.pagination) {
-                renderPagination(data.pagination, action, value);
-            }
-
         } catch (err) { 
             elements.browseGrid.innerHTML = `<p style="color:red; padding:20px;">Error: ${err.message}</p>`; 
         }
     }
 
-    function renderPagination(pagination, action, value) {
-        const { currentPage, totalPages } = pagination;
-        let html = '';
-        if (currentPage > 1) html += `<button class="action-button btn-secondary" style="width:auto" onclick="loadContent('${action}', '${value}', ${currentPage - 1})">Prev</button>`;
-        html += `<span style="align-self:center; margin:0 10px;">Page ${currentPage} of ${totalPages}</span>`;
-        if (currentPage < totalPages) html += `<button class="action-button btn-secondary" style="width:auto" onclick="loadContent('${action}', '${value}', ${currentPage + 1})">Next</button>`;
-        elements.paginationContainer.innerHTML = html;
-    }
-
     function selectItem(url) {
-        // 2026 FIX: Always use "watch" URLs for scraping instead of "details"
-        if (url.includes('/details/')) {
-            url = url.replace('/details/', '/watch/');
-        }
+        // Fix details links for the scraper
+        if (url.includes('/details/')) url = url.replace('/details/', '/watch/');
         elements.urlInput.value = url;
         openTab(null, 'tab-scrape');
-        showMsg('success', 'URL Loaded! Now click "Scrape Content".');
+        showMsg('success', 'URL Loaded! Now click Scrape.');
     }
 
     // --- SCRAPE LOGIC ---
     async function handleScrape(btn) {
         const url = elements.urlInput.value.trim();
-        const cookie = elements.cookieInput.value.trim();
-        if (!cookie) return showMsg('error', 'Cookie required! Paste it from Zflix.');
+        if (!url) return showMsg('error', 'Please enter or select a URL first.');
         
         btn.disabled = true; 
-        btn.innerHTML = 'Scraping... (takes longer for series) <span class="spinner"></span>';
+        btn.innerHTML = '<span class="spinner"></span> Scraping... (Sequential Mode)';
 
         try {
-            const isSeries = url.includes('/shows/');
             const res = await fetch(`${SCRAPER_URL}/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, type: isSeries ? 'series' : 'movie', fullCookie: cookie })
+                body: JSON.stringify({ url })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Scraper failure");
+            if (!res.ok) throw new Error(data.error);
 
             elements.outputData.textContent = JSON.stringify(data, null, 2);
             Prism.highlightElement(elements.outputData);
             
-            populateForm(isSeries ? 'series' : 'movie', data);
-            
-            showMsg('success', 'Scrape Success! Form populated.');
+            populateForm(url.includes('/shows/') ? 'series' : 'movie', data);
+            showMsg('success', 'Scrape Success!');
             setTimeout(() => openTab(null, 'tab-save'), 800);
         } catch (err) { 
             showMsg('error', err.message); 
             elements.outputData.textContent = JSON.stringify({error: err.message}, null, 2);
         } finally { 
             btn.disabled = false; 
-            btn.innerHTML = 'Scrape Content'; 
+            btn.innerHTML = 'SCRAPE CONTENT'; 
         }
     }
 
-    // --- FORM POPULATION ---
     function populateForm(type, data) {
         elements.dbForm.reset();
         const isSeries = type === 'series';
         elements.movieGroup.style.display = isSeries ? 'none' : 'block';
         elements.seriesGroup.style.display = isSeries ? 'block' : 'none';
 
-        const rawTitle = isSeries ? data.seriesTitle : data.title;
-        // Clean title for TMDB Search
-        const searchTitle = rawTitle.replace(/\s*-\s*Vj\s+.*/i, "").trim();
-        
-        document.getElementById('db_title').value = searchTitle;
-        elements.tmdbSearchQuery.value = searchTitle;
+        const cleanTitle = (isSeries ? data.seriesTitle : data.title).replace(/\s*-\s*Vj\s+.*/i, "").trim();
+        document.getElementById('db_title').value = cleanTitle;
+        elements.tmdbSearchQuery.value = cleanTitle;
 
         if (isSeries) {
-            const episodes = [];
-            if (data.seasons) {
-                data.seasons.forEach(s => {
-                    s.episodes.forEach(e => {
-                        episodes.push({ 
-                            episode: e.episode_number, 
-                            season: s.season_number, 
-                            title: e.title.toUpperCase(), 
-                            url: e.videoUrl 
-                        });
+            // Data is already formatted as S01E01 from the server
+            const flat = [];
+            data.seasons.forEach(s => {
+                s.episodes.forEach(e => {
+                    flat.push({ 
+                        episode: e.episode_number, 
+                        season: s.season_number, 
+                        title: e.title.toUpperCase(), 
+                        url: e.videoUrl 
                     });
                 });
-            }
-            document.getElementById('db_episodes_json').value = JSON.stringify(episodes, null, 2);
+            });
+            document.getElementById('db_episodes_json').value = JSON.stringify(flat, null, 2);
         } else {
             document.getElementById('db_stream_link').value = data.videoUrl;
         }
-        
-        // Auto trigger TMDB search
         document.getElementById('tmdb-search-btn').click();
     }
 
-    // --- SAVE LOGIC ---
+    // --- DATABASE SAVE ---
     elements.dbForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('db_title').value.trim();
         const tmdbId = document.getElementById('db_tmdb_id').value;
-        const selectedVjs = Array.from(document.querySelectorAll('input[name="vjs"]:checked')).map(c => c.value);
+        const vjs = Array.from(document.querySelectorAll('input[name="vjs"]:checked')).map(c => c.value);
 
-        if (selectedVjs.length === 0) return showMsg('error', 'Select at least one VJ!', elements.dbFormMessage);
+        if (vjs.length === 0) return showMsg('error', 'Select at least one VJ!', elements.dbFormMessage);
 
         elements.saveDbBtn.disabled = true;
-        elements.saveDbBtn.innerText = "Processing...";
+        elements.saveDbBtn.innerText = "Saving...";
 
         try {
-            // Duplicate Check
-            let filter = `title = "${title.replace(/"/g, '\\"')}"`;
-            if (tmdbId) filter += ` || tmdb_id = "${tmdbId}"`;
-            
-            const records = await pb.collection('media').getFullList({ filter });
-            
-            const isDuplicate = records.some(r => {
-                const existingVjs = [...(r.vjs || [])].sort();
-                const newVjs = [...selectedVjs].sort();
-                return JSON.stringify(existingVjs) === JSON.stringify(newVjs);
-            });
-
-            if (isDuplicate) throw new Error(`Already exists with these exact VJs.`);
-
             const isSeries = elements.seriesGroup.style.display === 'block';
             const record = {
                 title, tmdb_id: tmdbId, description: document.getElementById('db_description').value,
                 poster: document.getElementById('db_poster').value, backdrop: document.getElementById('db_backdrop').value,
-                year: document.getElementById('db_year').value, vjs: selectedVjs,
+                year: document.getElementById('db_year').value, vjs,
                 genres: Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(c => c.value),
                 tags: Array.from(document.querySelectorAll('input[name="tags"]:checked')).map(c => c.value),
                 contentType: isSeries ? 'tv' : 'movie'
@@ -369,61 +320,57 @@
             else record.stream_link = document.getElementById('db_stream_link').value;
 
             await pb.collection('media').create(record);
-            showMsg('success', '✅ Saved to Database!', elements.dbFormMessage);
+            showMsg('success', '✅ Successfully Saved!', elements.dbFormMessage);
             elements.dbForm.reset();
         } catch (err) { 
             showMsg('error', err.message, elements.dbFormMessage); 
         } finally { 
             elements.saveDbBtn.disabled = false; 
-            elements.saveDbBtn.innerText = "Save to Database"; 
+            elements.saveDbBtn.innerText = "SAVE TO DATABASE"; 
         }
     });
 
-    // --- TMDB API ---
+    // --- TMDB INTEGRATION ---
     document.getElementById('tmdb-search-btn').addEventListener('click', async () => {
         const q = elements.tmdbSearchQuery.value;
         const type = elements.seriesGroup.style.display === 'block' ? 'tv' : 'movie';
         if (!q) return;
-        elements.tmdbResults.innerHTML = 'Searching...';
+        elements.tmdbResults.innerHTML = 'Searching TMDB...';
         try {
             const res = await fetch(`https://api.themoviedb.org/3/search/${type}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}`);
             const d = await res.json();
             elements.tmdbResults.innerHTML = d.results.slice(0, 5).map(i => `
-                <div class="browse-card" style="width:100px; font-size:10px;" onclick="applyTmdb(${i.id}, '${type}')">
+                <div class="browse-card" style="width:110px; font-size:10px;" onclick="applyTmdb(${i.id}, '${type}')">
                     <img src="https://image.tmdb.org/t/p/w200${i.poster_path}" onerror="this.src='https://via.placeholder.com/100x150'">
                     <div style="padding:5px">${i.name || i.title}</div>
                 </div>
             `).join('');
-        } catch (e) { elements.tmdbResults.innerHTML = 'TMDB Search Failed.'; }
+        } catch (e) { elements.tmdbResults.innerHTML = 'TMDB Failed.'; }
     });
 
     async function applyTmdb(id, type) {
         try {
             const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
             const d = await res.json();
-            
             document.getElementById('db_title').value = d.title || d.name;
             document.getElementById('db_tmdb_id').value = d.id;
             document.getElementById('db_poster').value = d.poster_path ? `https://image.tmdb.org/t/p/w500${d.poster_path}` : '';
             document.getElementById('db_backdrop').value = d.backdrop_path ? `https://image.tmdb.org/t/p/original${d.backdrop_path}` : '';
             document.getElementById('db_year').value = (d.first_air_date || d.release_date || '').split('-')[0];
             document.getElementById('db_description').value = d.overview;
-
-            // Auto Genre Selection
-            document.querySelectorAll('input[name="genres"]').forEach(cb => cb.checked = false);
-            if (d.genres) {
-                d.genres.forEach(g => {
-                    let gName = g.name.toUpperCase();
-                    if (gName === 'SCIENCE FICTION') gName = 'SCI FI';
-                    const cb = document.querySelector(`input[name="genres"][value="${gName}"]`);
-                    if (cb) cb.checked = true;
+            
+            document.querySelectorAll('input[name="genres"]').forEach(cb => {
+                cb.checked = d.genres.some(g => {
+                    let gn = g.name.toUpperCase();
+                    if(gn === "SCIENCE FICTION") gn = "SCI FI";
+                    return gn === cb.value;
                 });
-            }
+            });
             showMsg('success', 'Metadata Applied!');
-        } catch (e) { showMsg('error', 'Failed to fetch TMDB details.'); }
+        } catch (e) { showMsg('error', 'Metadata failed.'); }
     }
 
-    // --- SETUP UI ---
+    // --- UI HELPERS ---
     const VJS = ["VJ JUNIOR", "VJ TONNY","VJ HEAVY Q","VJ EMMY", "VJ LIGHT","VJ RYAN","VJ JOE", "VJ MK","VJ HAM", "VJ MARK", "VJ SHIELD", "VJ ISMA K","VJ MOSCO", "VJ BONNY", "VJ NEIL", "VJ JOVAN", "VJ TOM", "VJ SHAO K", "VJ JINGO", "VJ ICE P", "VJ KEVO", "VJ KEVIN", "VJ KIN", "VJ KRISS S", "VJ HD", "VJ DAN DE", "VJ SAMMY", "VJ IVO", "VJ LITTLE T", "VJ LASH", "VJ MOX", "VJ MUBA", "VJ EDDY", "VJ KAM", "VJ LANCE", "VJ KS", "VJ ULIO", "VJ AARON", "VJ CABS", "VJ BANKS", "VJ JIMMY", "VJ BAROS", "VJ SOUL", "VJ SON", "VJ KIMULI", "VJ FREDY", "VJ JUMPERS", "VJ ASHIM", "VJ PAULETA", "VJ MARTIN K", "VJ HENRICO", "VJ MUSA", "VJ UNCLE T", "VJ WAZA", "VJ RONAGE"];
     const GENRES = ["ACTION", "ADVENTURE", "ANIMATION", "COMEDY", "CRIME", "DOCUMENTARY", "DRAMA", "FAMILY", "FANTASY", "HISTORY", "HORROR", "KUNGU FU", "LOVE STORY", "MUSIC", "MYSTERY", "ROMANCE", "SCI FI", "SPORT", "THRILLER", "WAR", "WESTERN"];
     const TAGS = ["latest_uploads", "recent_movies", "most_liked", "romance", "Latest-Movies", "indian", "action-thriller", "scifi-fantasy", "high-school", "animation", "horror", "comedy", "adventure", "send_notification", "latest_tv_series"];
@@ -436,42 +383,11 @@
         `).join('');
     }
 
-    elements.saveCookieBtn.addEventListener('click', () => {
-        const val = elements.cookieInput.value.trim();
-        if (val) {
-            localStorage.setItem('zflixSessionCookie', val);
-            elements.cookieInput.readOnly = true;
-            elements.saveCookieBtn.style.display = 'none';
-            elements.editCookieBtn.style.display = 'inline-block';
-            showMsg('success', 'Cookie stored locally!');
-            loadContent('browse', 'series');
-        }
-    });
-
-    elements.editCookieBtn.addEventListener('click', () => {
-        elements.cookieInput.readOnly = false;
-        elements.saveCookieBtn.style.display = 'inline-block';
-        elements.editCookieBtn.style.display = 'none';
-        elements.cookieInput.focus();
-    });
-
-    elements.searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') loadContent('search', elements.searchInput.value);
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
         makeChecks(VJS, 'vj-container', 'vjs');
         makeChecks(GENRES, 'genre-container', 'genres');
         makeChecks(TAGS, 'tag-container', 'tags');
-        
-        const cookie = localStorage.getItem('zflixSessionCookie');
-        if (cookie) { 
-            elements.cookieInput.value = cookie; 
-            elements.cookieInput.readOnly = true; 
-            elements.saveCookieBtn.style.display = 'none';
-            elements.editCookieBtn.style.display = 'inline-block';
-            loadContent('browse', 'series'); 
-        }
+        loadContent('browse', 'series'); 
     });
 </script>
 </body>
