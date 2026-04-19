@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Notifications - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-bg: #0A0F2A;
+            --card-bg: #1C2141;
+            --accent-color: #DFFF00;
+            --text-primary: #FFFFFF;
+            --text-secondary: #a9a9b3;
+            --input-bg: #0E1225;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --info-color: #2196F3;
+            --border-color: #33395b;
+        }
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Menu Overlay for Mobile */
+        #menuOverlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 15, 42, 0.7); backdrop-filter: blur(3px); z-index: 999; opacity: 0; transition: opacity 0.3s ease; }
+
+        /* --- DESKTOP SIDEBAR --- */
+        #mainMenu { 
+            width: 260px; flex-shrink: 0; background-color: #111533; height: 100vh; overflow-y: auto; 
+            display: flex; flex-direction: column; border-right: 1px solid var(--border-color); z-index: 1000;
+        }
+        #mainMenu::-webkit-scrollbar { width: 6px; }
+        #mainMenu::-webkit-scrollbar-track { background: transparent; }
+        #mainMenu::-webkit-scrollbar-thumb { background-color: #33395b; border-radius: 4px; }
+        #mainMenu::-webkit-scrollbar-thumb:hover { background-color: var(--accent-color); }
+
+        #mainMenu a { display: block; padding: 12px 20px; color: var(--text-secondary); text-decoration: none; flex-shrink: 0; font-size: 0.95rem; transition: 0.2s ease; border-left: 3px solid transparent; }
+        #mainMenu a:hover, #mainMenu a.active { background-color: rgba(255, 255, 255, 0.05); color: var(--accent-color); border-left: 3px solid var(--accent-color); }
+        #mainMenu .menu-header { padding: 25px 20px 10px 20px; font-size: 0.75rem; font-weight: 700; color: #6a7196; text-transform: uppercase; letter-spacing: 1px; }
+        #mainMenu a i { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; }
+        
+        /* --- MAIN LAYOUT & HEADER --- */
+        .main-content { flex-grow: 1; padding: 2rem; overflow-y: auto; width: calc(100% - 260px); box-sizing: border-box; }
+        
+        .admin-header { display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .header-title-section { display: flex; align-items: center; }
+        .admin-header h1 { color: var(--accent-color); font-size: 2.2rem; margin: 0; }
+        
+        #menuToggleBtn { display: none; background: transparent; color: var(--text-primary); border: none; font-size: 1.5rem; cursor: pointer; padding: 0; margin-right: 15px; width: 40px; height: 40px; align-items: center; justify-content: center; }
+        
+        .logout-btn { background-color: #e74c3c; color: white; border: 1px solid #e74c3c; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s; flex-shrink: 0; }
+        .logout-btn:hover { background-color: transparent; color: #e74c3c; }
+
+        /* --- CARDS --- */
+        .content-card-layout { background-color: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .content-card-layout h2 { font-size: 1.5rem; color: var(--accent-color); margin: 0 0 1.5rem 0; border-bottom: 1px solid #33395b; padding-bottom: 1rem; }
+        
+        /* --- FORMS --- */
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-secondary); font-weight: 500; }
+        .form-group input, .form-group textarea, .input-group-prefix { width: 100%; background-color: var(--input-bg); border: 1px solid #33395b; border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
+        .form-group input, .form-group textarea { padding: 12px; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--accent-color); outline: none; }
+        
+        /* Deep Link Prefix Styling */
+        .input-group-prefix { display: flex; overflow: hidden; align-items: stretch; }
+        .input-group-prefix span { padding: 12px; background-color: #2a2f50; border-right: 1px solid #33395b; color: #aaa; white-space: nowrap; font-size: 0.9rem; display: flex; align-items: center; }
+        .input-group-prefix input { border: none; flex-grow: 1; border-radius: 0; background: transparent; }
+        .input-group-prefix input:focus { outline: none; }
+
+        .gradient-btn { width: 100%; background: linear-gradient(90deg, #FF416C, #FFDE00); color: black; border: none; border-radius: 8px; padding: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 1rem; transition: transform 0.1s; }
+        .gradient-btn:active { transform: scale(0.98); }
+        .gradient-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* --- PREVIEW SECTION --- */
+        .notification-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .notification-preview-wrapper { background: var(--input-bg); border: 1px solid #33395b; padding: 20px; border-radius: 12px; height: 100%; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+        #previewImage { display: none; width: 100%; margin-top: 12px; border-radius: 8px; max-height: 200px; object-fit: cover; }
+
+        /* --- SEARCH RESULTS --- */
+        .search-result-item {
+            background-color: var(--input-bg); border-radius: 8px; padding: 1rem; margin-top: 1rem;
+            display: flex; gap: 1rem; align-items: center; border: 1px solid #33395b; transition: 0.2s;
+        }
+        .search-result-item:hover { border-color: var(--accent-color); transform: translateY(-3px); }
+        .search-result-item img { width: 60px; height: 90px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background-color: #0E1225; }
+        .search-result-info { flex-grow: 1; min-width: 0; }
+        .search-result-info h3 { margin: 0; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-result-info p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .select-btn { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; background-color: var(--accent-color); color: #000; font-weight: bold; white-space: nowrap; }
+
+        .message { padding: 15px; border-radius: 8px; margin-top: 1rem; text-align: center; display: none; font-weight: bold; }
+        .message.success { background-color: rgba(76, 175, 80, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
+        .message.error { background-color: rgba(244, 67, 54, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
+        .message.info { background-color: rgba(33, 150, 243, 0.2); color: var(--info-color); border: 1px solid var(--info-color); }
+        
+        /* --- 📱 MOBILE RESPONSIVENESS --- */
+        @media (max-width: 900px) {
+            .notification-layout { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #menuToggleBtn { display: flex; }
+            
+            /* Professional Off-Canvas Menu */
+            #mainMenu {
+                position: fixed; top: 0; left: -280px; width: 260px; height: 100vh;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border-right: none; box-shadow: 2px 0 15px rgba(0,0,0,0.6);
+            }
+            #mainMenu.open { left: 0; }
+            #menuOverlay.open { display: block; opacity: 1; }
+            
+            .main-content { padding: 1.2rem; width: 100%; }
+
+            /* Header Adjustments */
+            .admin-header { margin-bottom: 20px; align-items: center; }
+            .admin-header h1 { font-size: 1.45rem; }
+            
+            /* Icon-only return button on small screens */
+            .btn-text { display: none; }
+            .logout-btn { padding: 10px; width: 42px; justify-content: center; }
+
+            .content-card-layout { padding: 1.2rem; border-radius: 10px; }
+            
+            /* Mobile Layout: Put Preview ON TOP so user sees what they type */
+            .notification-layout { display: flex; flex-direction: column-reverse; gap: 20px; } 
+            
+            /* Deep Link Input fix for mobile width */
+            .input-group-prefix { flex-direction: column; }
+            .input-group-prefix span { width: 100%; box-sizing: border-box; border-right: none; border-bottom: 1px solid #33395b; font-size: 0.8rem; }
+            .input-group-prefix input { width: 100%; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Overlay -->
+    <div id="menuOverlay"></div>
+
+     <nav id="mainMenu">
+        <div class="menu-header">Main Overview</div>
+        <a href="index.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+
+        <div class="menu-header">Media Content</div>
+        <a href="manage-movies.html"><i class="fas fa-film"></i> Manage Movies</a>
+        <a href="Add shows via json.html"><i class="fas fa-file-code"></i> JSON Import</a>
+        <a href="Add shows via table.html"><i class="fas fa-table"></i> Table Import</a>
+        <a href="manage-attributes.html"><i class="fas fa-tags"></i> VJs & Genres</a>
+        <a href="search-content.html" id="sideNavSearch"><i class="fas fa-search"></i> Search & Edit</a>
+        <a href="all-content.html"><i class="fas fa-list-ul"></i> <span>View All</span></a>
+        
+        <div class="menu-header">App Management</div>
+        <a href="manage-banners.html"><i class="fas fa-images"></i> Manage Banners</a>
+        <a href="manage-notifications.html" class="active"><i class="fas fa-paper-plane"></i> Push Notifications</a>
+        <a href="manage-users.html"><i class="fas fa-users-cog"></i> User Accounts</a>
+
+        <div class="menu-header">Financials</div>
+        <a href="Payments.html"><i class="fas fa-money-bill-wave"></i> Payments & Wallet</a>
+        <a href="Balance.html"><i class="fas fa-wallet"></i> Wallet Balance</a>
+        <a href="Withdrawal.html"><i class="fas fa-paper-plane"></i> Send Withdrawal</a>
+        <a href="Transactions.html"><i class="fas fa-history"></i> Transaction History</a>
+
+            <div class="menu-header">Live Content</div>
+        <a href="add_tv_channel.html"><i class="fas fa-broadcast-tower"></i> Live TV Channels</a>
+        <a href="add_radio_station.html"><i class="fas fa-radio"></i> Radio Stations</a>
+        <a href="manage_radio_categories.html"><i class="fas fa-tags"></i> Radio Categories</a>
+        <a href="manage_radio_cities.html"><i class="fas fa-city"></i> Radio Cities</a>
+    </nav>
+
+
+    <div class="main-content">
+        
+        <!-- App Header -->
+        <div class="admin-header">
+            <div class="header-title-section">
+                <button id="menuToggleBtn"><i class="fas fa-bars"></i></button>
+                <h1>Manage Notifications</h1>
+            </div>
+            <button class="logout-btn" onclick="location.href='index.html'"><span class="btn-text">Dashboard</span> <i class="fas fa-home"></i></button>
+        </div>
+        
+        <div id="notificationSearchCard" class="content-card-layout">
+            <h2>1. Search Content (Optional)</h2>
+            <div class="form-group">
+                <input type="text" id="notificationSearchQuery" placeholder="Search any Movie or TV Show on TMDB...">
+            </div>
+            <button id="searchContentBtn" class="gradient-btn"><i class="fas fa-search"></i> Search TMDB</button>
+            <div id="notificationSearchResults"></div>
+        </div>
+
+        <div id="notificationFormCard" class="content-card-layout">
+            <h2>2. Compose and Send</h2>
+            <div class="notification-layout">
+                <div class="notification-form-col">
+                    <form id="notificationForm">
+                        <div class="form-group">
+                            <label for="notifTitle">Title</label>
+                            <input type="text" id="notifTitle" required placeholder="e.g. New Arrival: Gladiator II">
+                        </div>
+                        <div class="form-group">
+                            <label for="notifBody">Body</label>
+                            <textarea id="notifBody" required rows="4" placeholder="Watch now in HD..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="notifImageUrl">Image URL</label>
+                            <input type="url" id="notifImageUrl" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="notifUrlId">App Page to Open</label>
+                            <div class="input-group-prefix">
+                                <span>streamzonemovies://details?id=</span>
+                                <input type="text" id="notifUrlId" placeholder="Paste Record ID here">
+                            </div>
+                        </div>
+                        <button type="submit" id="sendNotificationBtn" class="gradient-btn"><i class="fas fa-paper-plane"></i> Send Notification</button>
+                    </form>
+                </div>
+                <div class="notification-preview-col">
+                    <div class="notification-preview-wrapper">
+                        <h3 style="text-align: center; color: var(--accent-color); margin-bottom: 15px;">Live Preview</h3>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <img src="https://placehold.co/24x24/d1e231/0b0f30?text=S" alt="App Icon" style="width: 24px; height: 24px; border-radius: 50%; margin-right: 8px;">
+                            <span style="font-size: 13px; font-weight: bold;">Stream Zone Movies</span>
+                            <span style="font-size: 13px; color: #aaa; margin-left: auto;">now</span>
+                        </div>
+                        <div style="padding-left: 32px; margin-top: 10px;">
+                            <h4 id="previewTitle" style="font-weight: bold; margin: 0 0 4px 0;">Notification Title</h4>
+                            <p id="previewBody" style="font-size: 14px; color: var(--text-secondary); margin: 0;">Notification body...</p>
+                        </div>
+                        <img id="previewImage" alt="Notification Image">
+                    </div>
+                </div>
+            </div>
+             <div id="notificationMessage" class="message"></div>
+        </div>
+    </div>
+    
+   <!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.5/pocketbase.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- 1. SETUP POCKETBASE ---
+        const pb = new PocketBase('https://db.streamzonemovies.online');
+        pb.autoCancellation(false);
+
+        // --- 2. SECURITY GUARD (6-Hour Limit) ---
+        const SESSION_DURATION_HOURS = 6;
+        const MAX_SESSION_MS = SESSION_DURATION_HOURS * 60 * 60 * 1000;
+
+        function checkSession() {
+            // Check PocketBase Token
+            if (!pb.authStore.isValid) return false;
+
+            // Check Time Limit from LocalStorage
+            const loginTime = localStorage.getItem('adminLoginTime');
+            if (!loginTime) return false; 
+            
+            // Calculate time difference
+            if ((Date.now() - parseInt(loginTime)) > MAX_SESSION_MS) {
+                alert("Session expired. Please login again.");
+                return false;
+            }
+            return true;
+        }
+
+        // Run Security Check
+        if (!checkSession()) {
+            pb.authStore.clear();
+            localStorage.removeItem('adminLoginTime');
+            window.location.href = 'login.html';
+            return; // Stop script execution
+        }
+
+        // --- 3. UI: LOGOUT & ADMIN INFO ---
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminEmailDisplay = document.getElementById('adminEmailDisplay');
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                pb.authStore.clear();
+                localStorage.removeItem('adminLoginTime');
+                window.location.href = 'login.html';
+            });
+        }
+
+        if (adminEmailDisplay && pb.authStore.model) {
+            adminEmailDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${pb.authStore.model.email}`;
+        }
+
+        // --- 4. MOBILE MENU LOGIC ---
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const mainMenu = document.getElementById('mainMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        function toggleMenu() {
+            mainMenu.classList.toggle('open');
+            menuOverlay.classList.toggle('open');
+        }
+        if (menuToggleBtn) menuToggleBtn.addEventListener('click', toggleMenu);
+        if (menuOverlay) menuOverlay.addEventListener('click', toggleMenu);
+
+
+        // --- 5. NOTIFICATION LOGIC ---
+        const TMDB_API_KEY = "f7a3b097ba7a990fd0c8ef3147646fb5";
+
+        const searchContentBtn = document.getElementById('searchContentBtn');
+        const searchResultsContainer = document.getElementById('notificationSearchResults');
+        const notifForm = document.getElementById('notificationForm');
+        const sendNotificationBtn = document.getElementById('sendNotificationBtn');
+        const notificationMessage = document.getElementById('notificationMessage');
+        const notifTitleInput = document.getElementById('notifTitle');
+        const notifBodyInput = document.getElementById('notifBody');
+        const notifImageUrlInput = document.getElementById('notifImageUrl');
+        const notifUrlIdInput = document.getElementById('notifUrlId');
+        
+        // Preview Elements
+        const previewTitle = document.getElementById('previewTitle');
+        const previewBody = document.getElementById('previewBody');
+        const previewImage = document.getElementById('previewImage');
+
+        const setLoading = (btn, isLoading) => { 
+            if(btn) {
+                btn.disabled = isLoading; 
+                btn.textContent = isLoading ? "Processing..." : (btn.id === 'sendNotificationBtn' ? "Send Notification" : "Search TMDB");
+            }
+        };
+
+        const displayMessage = (el, msg, type) => { 
+            if(el) {
+                el.textContent = msg; 
+                el.className = `message ${type}`; 
+                el.style.display = 'block'; 
+                setTimeout(() => { el.style.display = 'none'; }, 8000); 
+            }
+        };
+        
+        // SEND LOGIC
+        async function sendNotification(title, body, imageUrl = '', url = '') {
+            const payload = { data: { title, body, imageUrl, url } };
+            try {
+                // Cloudflare Worker URL
+                const functionUrl = 'https://spring-credit-724c.ajunaisaac-ug.workers.dev';
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorResult = await response.json().catch(() => ({ error: 'Unknown worker error' }));
+                    throw new Error(errorResult.error || `Request failed with status ${response.status}`);
+                }
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        // SEARCH LOGIC (Manual Search)
+        if(searchContentBtn) {
+            searchContentBtn.addEventListener('click', async () => {
+                const query = document.getElementById('notificationSearchQuery').value.trim();
+                if (!query) return;
+                setLoading(searchContentBtn, true);
+                searchResultsContainer.innerHTML = `<p class="message info" style="display:block">Searching TMDB...</p>`;
+                
+                try {
+                    const response = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    const results = data.results.filter(item => (item.media_type === 'movie' || item.media_type === 'tv') && item.poster_path);
+
+                    if (results.length === 0) {
+                        searchResultsContainer.innerHTML = `<p class="message info" style="display:block">No content found on TMDB.</p>`;
+                        return;
+                    }
+
+                    searchResultsContainer.innerHTML = '<h3 style="color:var(--text-secondary); margin-top:20px;">Select a result from TMDB</h3>';
+                    results.forEach(item => {
+                        const title = item.title || item.name;
+                        const year = (item.release_date || item.first_air_date || '').split('-')[0];
+                        const overview = item.overview ? item.overview.substring(0, 100) + '...' : 'No overview.';
+
+                        searchResultsContainer.innerHTML += `
+                            <div class="search-result-item">
+                                <img src="https://image.tmdb.org/t/p/w200${item.poster_path}" alt="Poster">
+                                <div class="search-result-info">
+                                    <h3>${title} (${year})</h3>
+                                    <p class="overview-snippet">${overview}</p>
+                                </div>
+                                <button class="select-btn select-tmdb-btn" data-tmdb-id="${item.id}">Select</button>
+                            </div>`;
+                    });
+                } catch (error) {
+                    searchResultsContainer.innerHTML = `<p class="message error" style="display:block">Error: ${error.message}</p>`;
+                } finally {
+                    setLoading(searchContentBtn, false);
+                }
+            });
+        }
+
+        // HANDLE SELECTION
+        searchResultsContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('select-tmdb-btn')) {
+                const tmdbId = e.target.dataset.tmdbId;
+                searchResultsContainer.innerHTML = `<p class="message info" style="display:block">Finding item in your database...</p>`;
+                try {
+                    const records = await pb.collection('media').getFullList({ filter: `tmdb_id = "${tmdbId}"` });
+                    if (records.length === 0) {
+                        searchResultsContainer.innerHTML = `<p class="message error" style="display:block">This item is not in your database yet.</p>`;
+                        return;
+                    }
+                    searchResultsContainer.innerHTML = '<h3 style="color:var(--text-secondary);">Choose the version to notify about</h3>';
+                    records.forEach(item => {
+                        searchResultsContainer.innerHTML += `
+                            <div class="search-result-item">
+                                <img src="${item.poster || ''}" alt="Poster">
+                                <div class="search-result-info">
+                                    <h3>${item.title}</h3>
+                                    <p><strong>VJ:</strong> ${(item.vjs || []).join(', ')}</p>
+                                </div>
+                                <button class="select-btn select-final-btn" 
+                                        data-id="${item.id}">Use This Version</button>
+                            </div>`;
+                    });
+                } catch (error) {
+                     searchResultsContainer.innerHTML = `<p class="message error" style="display:block">Error: ${error.message}</p>`;
+                }
+            }
+            if (e.target.classList.contains('select-final-btn')) {
+                const id = e.target.dataset.id;
+                await autofillFromId(id);
+                searchResultsContainer.innerHTML = `<p class="message success" style="display:block">Form filled from search.</p>`;
+            }
+        });
+
+       // AUTO-FILL HELPER
+        async function autofillFromId(recordId) {
+            try {
+                // Show loading state in form
+                notifTitleInput.value = "Loading...";
+                const record = await pb.collection('media').getOne(recordId);
+                
+                // Construct Data
+                const vjs = (record.vjs && record.vjs.length > 0) ? ` by ${record.vjs.join(', ')}` : "";
+                const title = `${record.title}${vjs}`;
+                const body = record.description || "Watch this new movie on Stream Zone Movies!";
+                
+                // ✅ FIX: Get the image, but safely convert TMDB /original/ to /w500/
+                let image = record.backdrop || record.poster || "";
+                if (image.includes('/original/')) {
+                    image = image.replace('/original/', '/w500/');
+                }
+                
+                // Fill Inputs
+                notifTitleInput.value = title;
+                notifBodyInput.value = body;
+                notifImageUrlInput.value = image; // Now this is the safe, small image!
+                notifUrlIdInput.value = record.id; // THE ID FOR DEEP LINK
+
+                // Update Preview
+                updatePreview();
+                
+                // Scroll to form
+                const formCard = document.getElementById('notificationFormCard');
+                if (formCard) formCard.scrollIntoView({ behavior: 'smooth' });
+
+            } catch(err) {
+                console.error(err);
+                displayMessage(notificationMessage, `Could not load movie data: ${err.message}`, 'error');
+            }
+        }
+
+        // CHECK URL PARAMS (Integration from other pages)
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoId = urlParams.get('autofill_id');
+        if (autoId) {
+            const searchCard = document.getElementById('notificationSearchCard');
+            if (searchCard) searchCard.style.display = 'none';
+            autofillFromId(autoId);
+        }
+
+        // FORM HANDLERS
+        function updatePreview() {
+            if (previewTitle) previewTitle.textContent = notifTitleInput.value || 'Notification Title';
+            if (previewBody) previewBody.textContent = notifBodyInput.value || 'Notification body...';
+            const url = notifImageUrlInput.value;
+            if (previewImage) {
+                if (url) {
+                    previewImage.style.display = 'block';
+                    previewImage.src = url;
+                } else {
+                    previewImage.style.display = 'none';
+                }
+            }
+        }
+
+        [notifTitleInput, notifBodyInput, notifImageUrlInput].forEach(el => {
+            if(el) el.addEventListener('input', updatePreview);
+        });
+
+     if(notifForm) {
+            notifForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Security check before sending
+                if (!checkSession()) { window.location.reload(); return; }
+
+                const title = notifTitleInput.value, body = notifBodyInput.value;
+                if (!title || !body) return displayMessage(notificationMessage, 'Title and Body are required.', 'error');
+                
+                // Construct Deep Link
+                const contentId = notifUrlIdInput.value.trim();
+                const fullUrl = contentId ? `streamzonemovies://details?id=${contentId}` : '';
+                
+                // ✅ FIX: Final safety check for the image URL before sending
+                let finalImageUrl = notifImageUrlInput.value;
+                if (finalImageUrl.includes('/original/')) {
+                    finalImageUrl = finalImageUrl.replace('/original/', '/w500/');
+                }
+                
+                setLoading(sendNotificationBtn, true);
+                
+                // Use finalImageUrl instead of notifImageUrlInput.value directly
+                const result = await sendNotification(title, body, finalImageUrl, fullUrl);
+                
+                setLoading(sendNotificationBtn, false);
+                
+                if (result.success) {
+                    displayMessage(notificationMessage, 'Notification sent successfully!', 'success');
+                    // Optional: clear the form after success
+                    // notifForm.reset(); 
+                    // updatePreview();
+                } else {
+                    displayMessage(notificationMessage, `Failed to send: ${result.error}`, 'error');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
